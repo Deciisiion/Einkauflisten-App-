@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Einkaufsliste</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+  <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css" />
+  <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#1f1f1f" />
+  
+  
+  <style>
+    html {
+     scroll-behavior: smooth;
+    }
+   
+   
+    body {
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .page-content {
+      padding: 0 100px 100px;
+      margin-top: 30px;
+    }
+
+    .demo-list-control {
+      width: 100%;
+      padding: 0 10px;
+    }
+
+    .checked {
+      text-decoration: line-through;
+      opacity: 0.6;
+      transition: all 0.2s ease;
+      
+    }
+
+    .mdl-list__item-secondary-action {
+      display: flex;
+      gap: 8px;
+    }
+
+
+    .dark-mode {
+      background-color: #121212;
+      color: #eee;
+    }
+
+    .dark-mode .mdl-layout__header,
+    .dark-mode .mdl-layout__drawer,
+    .dark-mode .mdl-button {
+      background-color: #1f1f1f;
+      color: #eee;
+    }
+
+    .dark-mode .mdl-textfield__input,
+    .dark-mode .mdl-textfield__label {
+      color: #eee;
+    }
+    
+    .dark-mode .mdl-list__item-primary-content,
+    .dark-mode #buyList span {
+      color: #eee;
+    }
+
+    .dark-mode .checked {
+       color: #0c0a0a81;
+       opacity: 0.7;
+    }
+
+
+    @media (max-width: 600px) {
+      .page-content {
+        padding: 10px;
+        margin-top: 10px;
+      }
+
+      .mdl-layout__header-row {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .mdl-navigation {
+        font-size: 14px;
+      }
+
+      label.mdl-switch {
+        margin-top: 10px;
+      }
+    }
+
+    button.mdl-button {
+     min-width: 56px;
+     min-height: 56px;
+     font-size: 16px;
+     border-radius: 40px;
+    }
+    
+    .mdl-checkbox__input {
+     transform: scale(0.8);
+     margin-left: 8px;
+    }
+
+
+
+  </style>
+
+  <script>
+    let items = JSON.parse(localStorage.getItem("buyList")) || [];
+    let favList = JSON.parse(localStorage.getItem("favList")) || [];
+
+    function addList() {
+      const item = listfield.value.trim();
+      if (!item) return;
+
+      items.push({ name: item, checked: false });
+      localStorage.setItem("buyList", JSON.stringify(items));
+      renderList();
+      listfield.value = "";
+    }
+
+    function renderList() {
+      const list = document.getElementById("buyList");
+      list.innerHTML = "";
+      items.forEach((entry, index) => {
+        list.innerHTML += `
+         <li class="mdl-list__item" onclick="toggleChecked(${index})">
+           <span class="mdl-list__item-primary-content">
+          <i class="material-icons mdl-list__item-avatar">label</i>
+           <span id="item-text-${index}" class="${entry.checked ? "checked" : ""}">${entry.name}</span>
+           </span>
+          <span class="mdl-list__item-secondary-action">
+         <button class="mdl-button mdl-js-button mdl-button--icon" onclick="addToFavorites(${index}); event.stopPropagation();" title="Zu Favoriten">
+           <i class="material-icons">star</i>
+          </button>
+          <button class="mdl-button mdl-js-button mdl-button--icon" onclick="deleteItem(${index}); event.stopPropagation();" title="Löschen">
+          <i class="material-icons">delete</i>
+         </button>
+        </span>
+        </li>
+        `;
+        });
+      }
+
+    function deleteItem(index) {
+      items.splice(index, 1);
+      localStorage.setItem("buyList", JSON.stringify(items));
+      renderList();
+    }
+
+    function toggleChecked(index) {
+  items[index].checked = !items[index].checked; // Status umkehren
+
+  localStorage.setItem("buyList", JSON.stringify(items));
+  renderList(); // Liste neu bauen
+}
+
+
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark-mode");
+      const isDark = document.body.classList.contains("dark-mode");
+      localStorage.setItem("darkMode", isDark);
+    }
+
+    function addToFavorites(index) {
+      favList.push(items[index]);
+      localStorage.setItem("favList", JSON.stringify(favList));
+    }
+
+    function renderFavorites() {
+  const favListElement = document.getElementById("favList");
+  const favSection = document.getElementById("favorites-section");
+  const mainListSection = document.getElementById("main-list-section");
+
+  // Ansicht umschalten
+  favSection.style.display = "block";
+  mainListSection.style.display = "none";
+
+  // Favoriten laden
+  favList = JSON.parse(localStorage.getItem("favList")) || [];
+
+  favListElement.innerHTML = "";
+
+  favList.forEach((entry, index) => {
+    favListElement.innerHTML += `
+      <li class="mdl-list__item">
+        <span class="mdl-list__item-primary-content" onclick="addFavToBuyList(${index})" title="Antippen zum Übernehmen">
+          ${entry.name}
+        </span>
+        <span class="mdl-list__item-secondary-action">
+          <button class="mdl-button mdl-js-button mdl-button--icon" onclick="addFavToBuyList(${index}); event.stopPropagation();" title="Zur Liste hinzufügen">
+            <i class="material-icons">add</i>
+          </button>
+          <button class="mdl-button mdl-js-button mdl-button--icon" onclick="deleteFavorite(${index}); event.stopPropagation();" title="Favorit löschen">
+            <i class="material-icons">delete</i>
+          </button>
+        </span>
+      </li>
+    `;
+  });
+}
+
+
+    function deleteFavorite(index) {
+      
+      favList.splice(index, 1); // Entferne aus dem Array
+      localStorage.setItem("favList", JSON.stringify(favList)); // Speicher aktualisieren
+      renderFavorites(); // Anzeige neu aufbauen
+    }
+
+
+    function addFavToBuyList(index) {
+      items.push({ ...favList[index], checked: false });
+      localStorage.setItem("buyList", JSON.stringify(items));
+      renderList();
+
+      document.getElementById("favorites-section").style.display = "none";
+      document.getElementById("main-list-section").style.display = "block";
+    }
+
+    window.onload = function () {
+      renderList();
+      const isDark = localStorage.getItem("darkMode") === "true";
+      if (isDark) {
+        document.body.classList.add("dark-mode");
+        const toggle = document.getElementById("darkmode-toggle");
+        if (toggle) toggle.checked = true;
+      }
+      if (typeof componentHandler !== "undefined") {
+        componentHandler.upgradeDom();
+      }
+    };
+
+    if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js")
+    .then(() => console.log("SW registriert"))
+    .catch(err => console.error("SW Fehler:", err));}
+
+  </script>
+</head>
+
+<body>
+  <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
+    <header class="mdl-layout__header">
+      <div class="mdl-layout__header-row">
+        <span class="mdl-layout-title">Einkaufsliste</span>
+        <div class="mdl-layout-spacer"></div>
+        <nav class="mdl-navigation mdl-layout--large-screen-only">
+          <a class="mdl-navigation__link" href="#" onclick="renderList(); document.getElementById('main-list-section').style.display='block'; document.getElementById('favorites-section').style.display='none';"><i class="material-icons">list</i> Einkaufsliste</a>
+          <a class="mdl-navigation__link" href="#" onclick="renderFavorites();"><i class="material-icons">star</i> Favoriten</a>
+        </nav>
+        <label class="mdl-switch mdl-js-switch mdl-js-ripple-effect" for="darkmode-toggle" style="margin-left: 20px;">
+          <input type="checkbox" id="darkmode-toggle" class="mdl-switch__input" onchange="toggleDarkMode()" />
+          <span class="mdl-switch__label">Dark Mode</span>
+        </label>
+      </div>
+    </header>
+
+    <div class="mdl-layout__drawer">
+      <span class="mdl-layout-title">Menü</span>
+      <nav class="mdl-navigation">
+        <a class="mdl-navigation__link" href="#" onclick="renderList(); document.getElementById('main-list-section').style.display='block'; document.getElementById('favorites-section').style.display='none';"><i class="material-icons">list</i> Einkaufsliste</a>
+        <a class="mdl-navigation__link" href="#" onclick="renderFavorites();"><i class="material-icons">star</i> Favoriten</a>
+      </nav>
+    </div>
+
+    <main class="mdl-layout__content">
+      <div class="page-content">
+
+        <!-- 🛒 Hauptliste -->
+        <div id="main-list-section">
+          <form onsubmit="addList(); return false;">
+            <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+              <input class="mdl-textfield__input" type="text" id="listfield" />
+              <label class="mdl-textfield__label" for="listfield">Produkt einfügen...</label>
+            </div>
+            
+            <button type="submit" class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored">
+              Produkt hinzufügen  
+            </button>
+          </form>
+
+          <ul class="demo-list-control mdl-list" id="buyList"></ul>
+        </div>
+
+        <!-- ⭐ Favoritenliste (versteckt bis aktiviert) -->
+        <div id="favorites-section" style="display: none;">
+          <h4>Favoriten</h4>
+          <ul class="demo-list-control mdl-list" id="favList">
+            <!-- Favoriten werden hier gerendert -->
+          </ul>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</body>
+</html>
